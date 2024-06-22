@@ -1,0 +1,398 @@
+In this project, there are four sensor used that transmit signal which varies in pulse width modulation so varies in frequency.According to the sensor that is put in "ON" state , the signal from it is passed to the RF Encoder which is transmit the signal through antenna.The RF receiver received the signal and is decoded and then send to microcontroller. In microcontroller, we code in such a way that depending on the signal received from four different sensor, the pulse width modulation is varies 25%,50%,75%, 100% so that the speed of the rotation of the motor(wheel of car) varies.
+
+25% ---> 1/4 speed ------------- wheel of car
+50% ---> 2/4 speed -------------- wheel of car
+75% ---> 3/4 speed -------------- wheel of car
+100% --> Full speed-------------- wheel of car
+
+I also used three another sensor in this project which represent the Left sensor, Right sensor and Front sensor in the schematic circuit daigram in proteus software. This three sensor run or drive the robot car automatically. If ere is dectection in the Left sensor, the motor of the robot car turn right. If there is detection on the right sensor, the motor of the robot car turn to the left. If there is detection on the front sensor, the motor of the robot car stop. The logic is given below:
+
+Left Motor  Right Motor
+
+P       N       P      N       
+1       0       1      0       FORWARD
+0       1       0      1       BACKWARD
+1       0       0      1       RIGHT
+0       1       1      0       LEFT
+
+
+The code for this is below:
+
+#include<reg51.h>
+#include<string.h>
+#define lcd P1
+#define input P0
+
+sbit rd = P2^0;
+sbit wr = P2^1;
+sbit intr = P2^2;
+sbit motor= P2^6;
+sbit rs = P2^5;
+sbit rw = P2^4;
+sbit e = P2^3;
+sbit motor1 = P3^6;
+sbit motor2 = P3^7;
+sbit sw1 = P2^7;
+sbit sw2 = P3^0;
+sbit sw3 = P3^1;
+sbit sw4 = P3^2;
+
+sbit Left_S = P3^3;
+sbit Right_S = P3^4;
+sbit Front_S =  P3^5;
+unsigned int v1;
+unsigned char x3;
+unsigned char tmpAdcData, d1;
+void delay(unsigned int);
+void delays(unsigned int); 
+void ldata(unsigned char);
+void cmd(unsigned char);
+unsigned int adc();
+void string(char *c);
+unsigned char r;
+
+void delays(unsigned int d)
+{
+	unsigned int x,y;
+	for(x=0;x<d;x++);
+	{
+	for(y=0;y<1275;y++);
+	}
+}
+
+void cmd ( char c){
+lcd = c;
+rs = 0;
+rw = 0;
+e = 1;
+delays(5);
+e = 0;
+
+}
+
+void ldata(char c)
+{
+	lcd=c;
+	rs=1;
+	rw=0;
+	e=1;
+	delays(5);
+	e=0;
+	
+}
+
+unsigned int adc()
+{
+	unsigned int adc=0x00;
+	rd=1;
+	wr=0;
+	delays(10);
+	wr=1;
+	while(intr==1);
+	rd=0;
+	intr=1;
+	delays(10);
+	adc=input;
+	return(adc);
+}
+
+void string (char *c)
+{
+	while(*c)
+	{
+		ldata(*c++);
+	}
+}
+	
+void main()
+{
+	motor1=0; 
+	motor2=0;
+	Left_S = 0;
+ //Right_S = 0;
+ //Front_S = 0;
+	
+cmd(0x38);	
+cmd(0x0c);
+cmd(0x01);
+cmd(0x80);
+	while(1)
+	{
+		delay(10);
+		cmd(0x80);
+		input = 0xff;
+		cmd(0x85);
+		tmpAdcData = adc();
+		d1=((tmpAdcData/10) + (0x30));
+		ldata(d1);
+		tmpAdcData = tmpAdcData%10;
+		ldata((tmpAdcData) + (0x30));
+	
+		if (d1> 0x32)
+		{
+			motor=1;
+			delay(50);
+			motor=0;
+			delay(50);
+		}
+		 if(d1> 0x31)
+		{
+			motor=1;
+		}
+	if(d1< 0x32)
+		{
+			motor=0;
+		}
+		
+		
+ if(Left_S==1 && sw1==0)
+	{
+		
+		motor2=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=1;
+	delay(10);
+	motor1=0;
+	delay(10);
+}
+	
+	}
+	if(Right_S==0 && sw1==0)
+	{
+		
+		motor1=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor2=1;
+	delay(10);
+	motor2=0;
+	delay(10);
+}
+	
+	}
+	if(Front_S==0 && sw1==0)
+	{
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=0;
+		delay(40);
+		motor2=0;
+		delay(40);
+}
+	}
+	
+
+	if(sw1==0)
+		{
+		for(v1=0;v1<200;v1++)
+{
+	motor1=1;
+	delay(10);
+	motor1=0;
+	delay(10);
+	motor2=1;
+	delay(10);
+	motor2=0;
+	delay(10);
+}
+}
+		
+
+		if(Left_S==1 && sw2==0)
+	{
+		
+		motor2=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=1;
+	delay(20);
+	motor1=0;
+	delay(5);
+}
+	}
+	if(Right_S==0 && sw2==0)
+	{
+		
+		motor1=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor2=1;
+	delay(20);
+	motor2=0;
+	delay(5);
+}
+	}
+	if(Front_S==0 && sw2==0)
+	{
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=0;
+		delay(40);
+		motor2=0;
+		delay(40);
+	}
+}
+	if(sw2==0)
+		{
+		for(v1=0;v1<200;v1++)
+{
+	motor1=1;
+	delay(20);
+	motor1=0;
+	delay(5);
+	motor2=1;
+	delay(20);
+	motor2=0;
+	delay(5);
+}
+	}
+		
+
+if(Right_S==0 && sw3==0)
+	{
+		
+		motor1=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor2=1; 	
+}
+	}		
+if(Left_S==1 && sw3==0)
+	{
+		
+			motor2=0;
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=1;
+	
+}
+	}
+	if(Front_S==0 && sw3==0)
+	{
+		for(v1=0;v1<2000;v1++)
+	{
+		motor1=0;
+		delay(40);
+		motor2=0; 
+delay(40);		
+	}   
+	}		
+	if(sw3==0)
+		{
+		for(v1=0;v1<200;v1++)
+{
+	motor1=1;
+	
+	motor2=1;
+	
+}
+}	
+if(sw4==0)
+		{
+		for(v1=0;v1<200;v1++)
+{
+	motor1=0;
+	motor2=0;
+	
+}
+}	
+}
+}
+	
+
+void delay(unsigned int val)
+{
+	unsigned int v2, v3;
+	for(v2=0; v2<val;v2++);
+	for(v3=0;v3<10; v3++);     
+}
+
+I also a temperature sensor in this project, depending on the temperature detect by it which varies with times, the signal from it is received by the ADC converter and digital signal is send to microcontroller. In microcontroller, the code is done to show the temperature in the LCD display and depending on the varies in the temperature, the cooler fan or air conditioner inside the motor car is changes from speed of 50% to full speed, the cooler power. There is a buzzer attach to the fire alarm , incase the car detect fire nearby, the buzzer will sound loudly. The code for it is below: 
+	
+#include<reg51.h>
+sbit sensor=P1^0;
+sbit buzzer=P3^0;
+
+sbit sensor1=P1^1;
+sbit relay1=P0^0;
+sbit relay2=P0^1;
+	unsigned int x;
+
+void delay(unsigned int value);
+
+void main()
+{
+	buzzer=0;
+	sensor=0;
+	sensor1=1;
+	relay1=0;
+	relay2=0;
+	while(1)
+	{
+		
+	if(sensor1==0)
+	{
+		for(x=0;x<40;x++)
+		{
+relay1=1;
+delay(10);
+relay2=0; // motor run clockwise ---door will open
+delay(10);
+		}
+for(x=0;x<40;x++)
+		{		
+relay1=0;
+delay(15);
+relay2=0; 
+delay(15);
+		}
+//relay1=0;
+//relay2=0;				
+//delay(5);
+for(x=0;x<40;x++)
+		{		
+relay1=0;
+delay(10);			
+relay2=1;		// motor starts anticlockwise --- door will close
+delay(10);
+		}
+	for(x=0;x<40;x++)
+		{		
+relay1=0;
+delay(30);
+relay2=0; 
+delay(30);
+		}
+	}
+	if(sensor==1)
+		{
+			buzzer=1;
+		}else
+		{
+			buzzer=0;
+		}
+	}
+}
+	
+
+	
+
+void delay(unsigned int value)
+{
+	unsigned int i,j;
+	for(i=0;i<value;i++)
+	{
+		for(j=0;j<400; j++);
+	}
+}
+
+*** The overall of the project is shown in file 1. My computer has Core i3 processor so the project doesn't work nicely so , I changes the sensor with switches in the project as shown in the proteus file 2 which can be simulate directly in any computer with proteus software.  
+
+
+
+	
+
+
+
+
